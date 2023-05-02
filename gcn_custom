@@ -91,3 +91,46 @@ def load_images_to_graph(dataset_path):
       if epoch % 10 == 0:
           print('Epoch {0}, Loss {1}'.format(epoch, total_loss / len(data_list)))
 
+
+
+
+
+
+def load_images_to_graph(dataset_path):
+    # Create dictionary to map class names to integers
+    class_to_idx = {'class1': 0, 'class2': 1, 'class3': 2, 'class4': 3, 'class5': 4, 'class6': 5}
+
+    # Create lists to store node features, edge indices, and class labels for all graphs in dataset
+    x_list = []
+    edge_index_list = []
+    y_list = []
+
+    # Loop over classes in dataset
+    for class_name in os.listdir(dataset_path):
+        if not os.path.isdir(os.path.join(dataset_path, class_name)):
+            continue
+        class_idx = class_to_idx[class_name]
+
+        # Loop over images in class
+        for file_name in os.listdir(os.path.join(dataset_path, class_name)):
+            if not (file_name.endswith('.jpg') or file_name.endswith('.png')):
+                continue
+
+            # Load image and convert to grayscale
+            img_path = os.path.join(dataset_path, class_name, file_name)
+            img = Image.open(img_path).convert('L')
+
+            # Convert image to graph and append to lists
+            x, edge_index = img_to_graph(img)
+            x_list.append(x)
+            edge_index_list.append(edge_index)
+            y_list.append(class_idx)
+
+    # Create PyTorch Geometric Data object from lists of node features, edge indices, and class labels
+    data = Data(x=torch.stack(x_list), edge_index=torch.stack(edge_index_list).t().contiguous(), y=torch.tensor(y_list))
+
+    return data
+
+
+
+

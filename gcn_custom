@@ -133,4 +133,132 @@ def load_images_to_graph(dataset_path):
 
 
 
+### GCN FOR RgB imgaes
+class GCN(nn.Module):
+    def __init__(self, num_features, hidden_size, num_classes):
+        super(GCN, self).__init__()
+
+        self.conv1 = GCNConv(num_features, hidden_size)
+        self.conv2 = GCNConv(hidden_size, num_classes)
+
+    def forward(self, x, edge_index):
+        x = F.relu(self.conv1(x, edge_index))
+        x = self.conv2(x, edge_index)
+        return F.log_softmax(x, dim=1)
+
+
+
+#GCN for 6 class RGB images
+import os
+import torch
+import torchvision.transforms as transforms
+from torch_geometric.data import Data, DataLoader
+from torch_geometric.nn import GCNConv
+import torch.nn.functional as F
+
+# Define transform for images
+transform = transforms.Compose([
+    transforms.Resize((32, 32)),  # Resize image to 32x32 pixels
+    transforms.ToTensor()  # Convert image to tensor
+])
+
+# Define function to convert images to graph-based representation
+def img_to_graph_rgb(image_tensor):
+    # Extract RGB color channels separately
+    red_channel = image_tensor[0, :, :]
+    green_channel = image_tensor[1, :, :]
+    blue_channel = image_tensor[2, :, :]
+
+    # Convert each color channel to a 1D vector and stack them into a 3D tensor
+    nodes = torch.stack([red_channel.view(-1), green_channel.view(-1), blue_channel.view(-1)], dim=1)
+
+    # Create edge indices for a 2D grid graph
+    num_pixels = image_tensor.shape[1] * image_tensor.shape[2]
+    row_indices = torch.arange(num_pixels)
+    col_indices = torch.arange(num_pixels)
+    edge_index = torch.stack([row_indices, col_indices], dim=0)
+
+    # Create a PyTorch Geometric Data object
+    data = Data(x=nodes, edge_index=edge_index)
+
+    return data
+
+# Define GCN model
+class GCN(nn.Module):
+    def __init__(self, num_features, hidden_size, num_classes):
+        super(GCN, self).__init__()
+
+        self.conv1 = GCNConv(num_features, hidden_size)
+        self.conv2 = GCNConv(hidden_size, num_classes)
+
+    def forward(self, x, edge_index):
+        x = F.relu(self.conv1(x, edge_index))
+        x = self.conv2(x, edge_index)
+        return F.log_softmax(x, dim=1)
+
+# Define paths to image folders
+folder_names = ['class1', 'class2', 'class3', 'class4', 'class5', 'class6']
+root_path = '/path/to/parent/folder/'
+
+# Create list of image paths and class labels
+image_paths = []
+class_labels = []
+for i, folder_name in enumerate(folder_names):
+    folder_path = os.path.join(root_path, folder_name)
+    image_filenames = os.listdir(folder_path)
+    for image_filename in image_filenames:
+        image_path = os.path.join(folder_path, image_filename)
+        image_paths.append(image_path)
+        class_labels.append(i)
+
+# Load images and convert them to graph-based representation
+data_list = []
+for image_path in image_paths:
+    image = Image.open(image_path).convert('RGB')
+    image_tensor = transform(image)
+    data = img_to_graph_rgb(image_tensor)
+    data_list.append(data)
+
+# Create PyTorch Geometric Data object
+loader = DataLoader(data_list, batch_size=32, shuffle=True)
+
+# Train GCN model
+model = GCN(num_features=3, hidden_size=16, num_classes=6)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+for epoch in range(200):
+    total_loss = 0
+    for batch in loader:
+        optimizer.zero_grad()
+        out = model(batch.x, batch.edge_index)
+        loss = F.nll_loss(out, batch.y)
+        loss.backward()
+        optimizer.step()
+        total_loss += loss.item() * batch.num_graphs
+    print('Epoch
+
+
+# Stopped & regerated
+model = GCN(num_features=3, hidden_size=16, num_classes=num_classes)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+
+for epoch in range(200):
+    total_loss = 0
+    model.train()
+    for batch in loader:
+        optimizer.zero_grad()
+        out = model(batch.x.float(), batch.edge_index)
+        loss = F.nll_loss(out, batch.y)
+        loss.backward()
+        optimizer.step()
+        total_loss += loss.item() * batch.num_graphs
+    print('Epoch: {}, Loss: {:.4f}'.format(epoch+1, total_loss / len(train_dataset)))
+
+# Evaluate GCN model
+model.eval()
+correct = 0
+for batch in test_loader:
+    pred = model(batch.x.float(), batch.edge_index).argmax(dim=1)
+    correct += int((pred == batch.y).sum())
+
+print('Accuracy: {:.4f}'.format(correct / len(test_dataset)))
 

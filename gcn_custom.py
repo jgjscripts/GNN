@@ -61,6 +61,45 @@ def load_images_to_graph(dataset_path):
         def __init__(self, num_features, hidden_size, num_classes):
             super(GCN, self).__init__()
             self.conv1 = GCNConv(num_features, hidden_size)
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+class MyModel(nn.Module):
+    def __init__(self):
+        super(MyModel, self).__init__()
+
+        # 32x32x3 => 30x30x32
+        self.conv1 = nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3)
+        self.d1 = nn.Linear(30 * 30 * 32, 128)
+        self.d2 = nn.Linear(128, 20)
+
+    def forward(self, x):
+        # 32x32x3 => 30x30x32
+        x = self.conv1(x)
+        x = F.relu(x)
+
+        # flatten => 32 x (30*30*32)
+        x = x.flatten(start_dim=1)
+
+        # 32 x (30*30*32) => 32x128
+        x = self.d1(x)
+        x = F.relu(x)
+
+        # logits => 32x20
+        logits = self.d2(x)
+        out = F.softmax(logits, dim=1)
+        return out
+            
             self.conv2 = GCNConv(hidden_size, num_classes)
 
         def forward(self, x, edge_index):

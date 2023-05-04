@@ -1,0 +1,25 @@
+import torch
+from sklearn.metrics import confusion_matrix
+
+# load your trained PyTorch model
+model = ...
+
+# create a test dataset with labels
+test_dataset = ...
+
+# set the model to evaluation mode
+model.eval()
+
+# make predictions on the test dataset
+predicted_labels = []
+true_labels = []
+with torch.no_grad():
+    for inputs, labels in test_dataset:
+        outputs = model(inputs)
+        _, predicted = torch.max(outputs.data, 1)
+        predicted_labels.extend(predicted.cpu().numpy())
+        true_labels.extend(labels.cpu().numpy())
+
+# calculate the confusion matrix
+cm = confusion_matrix(true_labels, predicted_labels)
+print(cm)

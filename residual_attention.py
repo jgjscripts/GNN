@@ -44,3 +44,37 @@ model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accur
 
 # Print the model summary
 model.summary()
+
+
+from tensorflow.keras.datasets import cifar10
+from tensorflow.keras.utils import to_categorical
+
+# Load the CIFAR-10 dataset
+(train_images, train_labels), (test_images, test_labels) = cifar10.load_data()
+
+# Normalize pixel values to the range of 0 to 1
+train_images = train_images.astype('float32') / 255.0
+test_images = test_images.astype('float32') / 255.0
+
+# Convert labels to categorical one-hot encoding
+num_classes = 10
+train_labels = to_categorical(train_labels, num_classes)
+test_labels = to_categorical(test_labels, num_classes)
+
+# Create an instance of the residual attention network
+input_shape = train_images.shape[1:]
+model = residual_attention_network(input_shape, num_classes)
+
+# Compile the model
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+# Train the model
+batch_size = 32
+epochs = 10
+model.fit(train_images, train_labels, batch_size=batch_size, epochs=epochs, validation_data=(test_images, test_labels))
+
+# Evaluate the model
+test_loss, test_accuracy = model.evaluate(test_images, test_labels, verbose=0)
+print('Test Loss:', test_loss)
+print('Test Accuracy:', test_accuracy)
+
